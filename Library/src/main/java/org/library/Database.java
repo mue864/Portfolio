@@ -1,7 +1,10 @@
 package org.library;
 
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import java.net.ConnectException;
 import java.sql.*;
+import java.util.Base64;
 
 public class Database {
 
@@ -43,12 +46,20 @@ public class Database {
                 +   "preference TEXT NOT NULL"
                 +   ");";
 
-
+        String sqlCreateKeyTable = "CREATE TABLE IF NOT EXISTS storage (\n"
+                +   "value TEXT NOT NULL, \n"
+                +   "isCreated INTEGER PRIMARY KEY AUTOINCREMENT"
+                +   ");";
 
         try (Connection connection = this.connect();
-            Statement statement = connection.createStatement()) {
-            statement.execute(bookTable);
-            statement.execute(userTable);
+            PreparedStatement createBookTable = connection.prepareStatement(bookTable);
+            PreparedStatement createUserTable = connection.prepareStatement(userTable);
+            PreparedStatement createKeyTable = connection.prepareStatement(sqlCreateKeyTable)) {
+
+           createBookTable.execute();
+           createUserTable.execute();
+           createKeyTable.execute();
+
 //            System.out.println("Tables created");
         } catch (SQLException e) {
             System.out.println(e.getMessage());
@@ -72,27 +83,150 @@ public class Database {
         }
     }
 
-    private void retrievePassword() {
-        String sql = "SELECT userName, password FROM users";
+//    checks if there is a duplicate userName in the database
+    public boolean getCheckDuplicateUserName(String userName) {
+        return checkDuplicateUserName(userName);
+    }
+
+//supposed to store the key in the database
+    private void keyStorage(SecretKey key) {
+        String sqlCreateTable = "CREATE TABLE IF NOT EXISTS storage (\n"
+                            +   "value TEXT NOT NULL, \n"
+                            +   "isCreated INTEGER PRIMARY KEY AUTOINCREMENT"
+                            +   ");";
+
+        String sqlInsert = "INSERT INTO storage (value) VALUES (?)";
+
+        try (Connection connection = this.connect();
+            PreparedStatement createStatement = connection.prepareStatement(sqlCreateTable);
+            PreparedStatement insertStatement = connection.prepareStatement(sqlInsert);) {
+
+//            creating a new table if it does not exist
+            createStatement.execute(sqlCreateTable);
+
+//            converts the key from bytes to string
+            String encodedKey = Base64.getEncoder().encodeToString(key.getEncoded());
+
+            insertStatement.setString(1, encodedKey);
+            insertStatement.execute();
+
+
+        } catch (SQLException e) {
+            System.out.println("Here");
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     *
+     * @param key the secretkey to be stored
+     */
+    public void getKeyStorage(SecretKey key) {
+        keyStorage(key);
+    }
+
+//    retrieve the int value to check if a key has been stored yet
+    private int retrieveExistsConfirmation() {
+        String sql = "SELECT isCreated FROM storage LIMIT 1";
+
+        try (Connection connection = this.connect();
+            PreparedStatement retrieveStatement = connection.prepareStatement(sql);
+            ResultSet rs = retrieveStatement.executeQuery()) {
+
+            while (rs.next()) {
+//                if the column is NULL i.e first time, it will be stored as null else just get the number
+                if (rs.wasNull()) {
+                    return 0;
+                } else {
+                    return rs.getInt("isCreated");
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+        return 0;
+    }
+
+    public int getExistConfirmation() {
+        return retrieveExistsConfirmation();
+    }
+
+//    retrieve key from the database
+    private SecretKey retrieveKey() {
+        String sql = "SELECT value FROM storage LIMIT 1";
+
+        try (Connection connection = this.connect();
+             PreparedStatement selectStatement = connection.prepareStatement(sql);
+             ResultSet keyResult = selectStatement.executeQuery()) {
+
+            while (keyResult.next()) {
+//                Getting the encoded key from db
+                String encodedKey = keyResult.getString("value");
+
+//                Decode it back to bytes
+                byte[] decodedKey = Base64.getDecoder().decode(encodedKey);
+
+                return new SecretKeySpec(decodedKey, 0, decodedKey.length, "AES");
+            }
+
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+
+
+        return null;
+    }
+
+    public SecretKey getKey() {
+        return retrieveKey();
+    }
+
+
+    private boolean checkDuplicateUserName(String name) {
+        createTables();
+        String sql = "SELECT userName FROM users";
 
         try (Connection connection = this.connect();
              Statement statement = connection.createStatement();
              ResultSet rs = statement.executeQuery(sql)) {
 
             while (rs.next()) {
-                String name = rs.getString("userName");
-                String data = rs.getString("password");
-
-                Encryption encryption = new Encryption();
-                String pass =  encryption.doDecrypt(data);
-
-
+                String userName = rs.getString("userName");
+//              If name exists in the database return true else return false
+                if (userName.equals(name)) {
+                    return true;
+                }
             }
+
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+        return false;
+    }
+
+//    returns encrypted password
+    public String getSecure() {
+        return retrievePassword();
+    }
+
+    private String retrievePassword() {
+        String sql = "SELECT userName, password FROM users";
+        String data = "";
+        try (Connection connection = this.connect();
+             Statement statement = connection.createStatement();
+             ResultSet rs = statement.executeQuery(sql)) {
+
+            while (rs.next()) {
+                data = rs.getString("password");
+            }
+
+
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+        return data;
     }
 
 //    setter method to add data to the database
@@ -101,4 +235,5 @@ public class Database {
 
         addUserInfo(userName, userLastName, password, preference, school);
     }
+
 }

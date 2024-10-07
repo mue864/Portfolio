@@ -45,18 +45,50 @@ public class Main {
     }
 
 //    this one logs in to an existing account
-    public static void login() {
+    public static void login() throws Exception{
+       DbConnector dbConnector = new DbConnector();
+
+
+        System.out.println("User Name: ");
+        String userName = scanner.next();
+
+
+        System.out.println("Password: ");
+
+        String password = "";
+        int attempts = 3;
+        while (attempts > 0) {
+            password = scanner.next();
+            if (dbConnector.getCheckSecure(password)) {
+                System.out.println("Logged in");
+                break;
+            } else {
+                System.out.println("Incorrect Password");
+                attempts--;
+            }
+        }
 
     }
 
 
     public static void creatAccount() throws Exception {
-
+        DbConnector dbConnector = new DbConnector();
         dateTime();
         System.out.println("Please fill in the following: \n");
 
         System.out.println("First Name: ");
         String name = scanner.next();
+
+        //      Stores result whether a name is in the database already or not
+        boolean result = dbConnector.duplicateUserName(name);
+
+        while (result) {
+            System.out.println("User name already exists! Choose another one.");
+            name = scanner.next();
+
+//            rechecks the userName again until it is unique
+            result = dbConnector.duplicateUserName(name);
+        }
 
         System.out.println("Last Name: ");
         String lastName = scanner.next();
@@ -90,7 +122,6 @@ public class Main {
         String preference = scanner.next();
 
 //        After taking user data, send the data to the db connector class
-        DbConnector dbConnector = new DbConnector();
         dbConnector.setUserData(name,lastName,password,preference,school);
     }
 }

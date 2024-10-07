@@ -48,7 +48,6 @@ public class Main {
     public static void login() throws Exception{
        DbConnector dbConnector = new DbConnector();
 
-
         System.out.println("User Name: ");
         String userName = scanner.next();
 
@@ -116,10 +115,13 @@ public class Main {
         System.out.println("Passwords match");
 
         System.out.println("School: ");
-        String school = scanner.next();
+        String school = scanner.nextLine();
 
         System.out.println("Which books do you prefer: ");
-        String preference = scanner.next();
+        String preference = scanner.nextLine();
+
+
+        login();
 
 //        After taking user data, send the data to the db connector class
         dbConnector.setUserData(name,lastName,password,preference,school);

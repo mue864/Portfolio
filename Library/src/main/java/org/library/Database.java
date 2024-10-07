@@ -78,6 +78,7 @@ public class Database {
             preparedStatement.setString(4, school);
             preparedStatement.setString(5, preference);
             preparedStatement.executeUpdate();
+
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
@@ -90,19 +91,11 @@ public class Database {
 
 //supposed to store the key in the database
     private void keyStorage(SecretKey key) {
-        String sqlCreateTable = "CREATE TABLE IF NOT EXISTS storage (\n"
-                            +   "value TEXT NOT NULL, \n"
-                            +   "isCreated INTEGER PRIMARY KEY AUTOINCREMENT"
-                            +   ");";
-
         String sqlInsert = "INSERT INTO storage (value) VALUES (?)";
 
         try (Connection connection = this.connect();
-            PreparedStatement createStatement = connection.prepareStatement(sqlCreateTable);
             PreparedStatement insertStatement = connection.prepareStatement(sqlInsert);) {
 
-//            creating a new table if it does not exist
-            createStatement.execute(sqlCreateTable);
 
 //            converts the key from bytes to string
             String encodedKey = Base64.getEncoder().encodeToString(key.getEncoded());
@@ -133,12 +126,13 @@ public class Database {
             PreparedStatement retrieveStatement = connection.prepareStatement(sql);
             ResultSet rs = retrieveStatement.executeQuery()) {
 
-            while (rs.next()) {
-//                if the column is NULL i.e first time, it will be stored as null else just get the number
+            if (rs.next()) {
+                int isCreated = rs.getInt("isCreated");
+
                 if (rs.wasNull()) {
                     return 0;
                 } else {
-                    return rs.getInt("isCreated");
+                    return isCreated;
                 }
             }
         } catch (SQLException e) {
@@ -219,7 +213,6 @@ public class Database {
             while (rs.next()) {
                 data = rs.getString("password");
             }
-
 
         } catch (SQLException e) {
             System.out.println(e.getMessage());

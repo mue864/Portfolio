@@ -73,7 +73,29 @@ public class HttpReq {
         return jsonResponse;
     }
 
+    private String preferenceData(String bookTitle) {
+        try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
+            var request = ClassicRequestBuilder
+                    .get("https://www.googleapis.com/books/v1/volumes?q=intitle:"+bookTitle)
+                    .build();
 
+            try (CloseableHttpResponse response = httpClient.execute(request)) {
+                responseCode = response.getCode();
+                jsonResponse = EntityUtils.toString(response.getEntity());
+
+            } catch (IOException | ParseException exception) {
+                exception.printStackTrace();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return jsonResponse;
+    }
+
+    public String getPreferenceData(String bookTitle) {
+        return  preferenceData(bookTitle);
+    }
 
 //    Return the stored book info
     public ArrayList<String> getBookAuthorList() {

@@ -14,6 +14,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Scanner;
 
 public class Book {
 
@@ -39,12 +40,32 @@ public class Book {
     private String publicationDate;
 
 
-
+//  for searching books
     public void insertQuery (String bookAuthor, String bookTitle) {
         getResponse(bookAuthor, bookTitle);
     }
 
+//  for the first attempt when one creates an account
+    public void automaticQuery(String bookTitle) {
+        autoQuery(bookTitle);
+    }
 
+    private void autoQuery(String bookTitle) {
+        HttpReq req = new HttpReq();
+
+        String encodedBookTitle = encode(bookTitle);
+        req.getPreferenceData(encodedBookTitle);
+
+        int responseCode = req.getResponseCode();
+        if (responseCode == 200) {
+            req.setJsonData();
+            loadBookInfo(req);
+
+            printBookInfo();
+        } else {
+            System.out.println("There has been an error");
+        }
+    }
 
     private void getResponse(String author, String bookTitle) {
         HttpReq req = new HttpReq();
@@ -88,6 +109,7 @@ public class Book {
      */
 
     public void printBookInfo() {
+        Scanner scanner = new Scanner(System.in);
         int minSize = Math.min(
                 bookTitleList.size(),
                 Math.min(
@@ -108,18 +130,28 @@ public class Book {
 
         for (int i = 0; i < minSize; i++) {
             // Access elements from each list
-            String title = bookTitleList.get(i);
-            String author = bookAuthorList.get(i);
-            String isbn = bookISBNList.get(i);
-            String publisher = publisherList.get(i);
-            String publishedDateStr = publishedDate.get(i);
-            int pageCount = Integer.parseInt(pageCountList.get(i));
-
-            System.out.println("Title: " + title +"\n" + "Author: " + author + "\n" + "ISBN: " + isbn + "\n" +
-                                "Publisher: " + publisher + "\n" + "Published Date: " + publishedDateStr + "\n" +
-                                "Page Count: " + pageCount + "\n\n");
+            processBookSelection(i);
         }
+        int bookChoice = scanner.nextInt();
+//        lists the selected book
+        processBookSelection(bookChoice);
+    }
 
+    /**
+     * This method is used twice, to print available books and to print the user choice
+     * @param userChoice used for taking either the user selection or loop value
+     */
+    private void processBookSelection(int userChoice) {
+        String title = bookTitleList.get(userChoice);
+        String author = bookAuthorList.get(userChoice);
+        String isbn = bookISBNList.get(userChoice);
+        String publisher = publisherList.get(userChoice);
+        String publishedDateStr = publishedDate.get(userChoice);
+        int pageCount = Integer.parseInt(pageCountList.get(userChoice));
+
+        System.out.println(userChoice+1 + "\n" + "Title: " + title +"\n" + "Author: " + author + "\n" + "ISBN: " + isbn + "\n" +
+                "Publisher: " + publisher + "\n" + "Published Date: " + publishedDateStr + "\n" +
+                "Page Count: " + pageCount + "\n\n");
     }
 
 //    Encoding the value, in case it has space

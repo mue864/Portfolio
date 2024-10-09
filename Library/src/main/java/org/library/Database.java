@@ -2,13 +2,12 @@ package org.library;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-import java.net.ConnectException;
 import java.sql.*;
 import java.util.Base64;
 
 public class Database {
 
-
+    private int userID;
     private Connection connect() {
         String url = "jdbc:sqlite:library.db";
         Connection con = null;
@@ -22,8 +21,56 @@ public class Database {
         return con;
     }
 
-    public void createTables() {
+    public int getUserID(String userName) {
+        return retrieveCurrentUserID(userName);
+    }
+    private int retrieveCurrentUserID(String userName) {
+        String retrieveQuery = "SELECT userID FROM users WHERE userName = '" + userName + "'";
+        try (Connection connection = this.connect();
+            PreparedStatement preparedStatement = connection.prepareStatement(retrieveQuery);
+            ResultSet resultSet = preparedStatement.executeQuery();) {
+            if (resultSet.next()) {
+                userID = resultSet.getInt("userID");
 
+                if (resultSet.wasNull()) {
+                    userID = 0;
+                }
+                return userID;
+            }
+
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+        return 0;
+    }
+
+    public void setBookStorage(String bookName, String bookAuthor, String isbn, String publisher,
+                               String publishedDate, String pageCount) {
+
+        addBookInfo(bookName,bookAuthor,publisher,isbn,publishedDate, pageCount,userID);
+    }
+//    the id must be fetched from the current user db. but how?
+    private void addBookInfo (String bookTitle, String bookAuthor,
+                              String bookPublisher, String isbn, String publishedDate, String pages, int userID) {
+
+        String insertInfo = "INSERT INTO books(title, author, publisher, isbn, pages, publishedDate, ID) VALUES(?,?,?,?,?,?,?)";
+
+        try (Connection connection = this.connect();
+            PreparedStatement preparedStatement = connection.prepareStatement(insertInfo);) {
+            preparedStatement.setString(1,bookTitle);
+            preparedStatement.setString(2,bookAuthor);
+            preparedStatement.setString(3,bookPublisher);
+            preparedStatement.setString(4,isbn);
+            preparedStatement.setString(5,pages);
+            preparedStatement.setString(5,publishedDate);
+            preparedStatement.setInt(6,userID);
+            preparedStatement.execute();
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    public void createTables() {
         String bookTable = "CREATE TABLE IF NOT EXISTS books (\n"
                 +   "bookID INTEGER PRIMARY KEY AUTOINCREMENT, \n"
                 +   "title TEXT NOT NULL, \n"
@@ -35,7 +82,6 @@ public class Database {
                 +   "ID INTEGER NOT NULL, \n"
                 +   "FOREIGN KEY (ID) REFERENCES users (userID)"
                 +   ");";
-
 
         String userTable = "CREATE TABLE IF NOT EXISTS users (\n"
                 +   "userID INTEGER PRIMARY KEY AUTOINCREMENT, \n"

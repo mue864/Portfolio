@@ -14,6 +14,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.InputMismatchException;
 import java.util.Scanner;
 
 public class Book {
@@ -127,14 +128,46 @@ public class Book {
                 )
         );
 
-
         for (int i = 0; i < minSize; i++) {
             // Access elements from each list
             processBookSelection(i);
         }
         int bookChoice = scanner.nextInt();
 //        lists the selected book
-        processBookSelection(bookChoice);
+        processBookSelection(bookChoice-1);
+
+//        store the bookChoice for later use
+        storeBookChoice(bookChoice-1);
+    }
+
+
+    private void storeBookChoice(int bookChoice) {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("""
+                Do you wish to borrow this book?
+                1. Yes
+                2. No""");
+        int choice;
+        while (true) {
+            try {
+                choice = scanner.nextInt();
+                if (choice == 1 ) {
+//                If choice is 1 then continue with the borrow process
+                    saveBooks(bookChoice);
+                    break;
+                }
+            } catch (InputMismatchException e) {
+                System.out.println("Invalid Input.");
+                scanner.nextLine();
+            }
+        }
+    }
+
+    private void saveBooks(int bookPosition) {
+//        Save the books to the db
+        Database db = new Database();
+        db.setBookStorage(bookTitleList.get(bookPosition), bookAuthorList.get(bookPosition), bookISBNList.get(bookPosition),
+                publisherList.get(bookPosition), publishedDate.get(bookPosition), pageCountList.get(bookPosition));
     }
 
     /**
@@ -152,6 +185,8 @@ public class Book {
         System.out.println(userChoice+1 + "\n" + "Title: " + title +"\n" + "Author: " + author + "\n" + "ISBN: " + isbn + "\n" +
                 "Publisher: " + publisher + "\n" + "Published Date: " + publishedDateStr + "\n" +
                 "Page Count: " + pageCount + "\n\n");
+
+
     }
 
 //    Encoding the value, in case it has space

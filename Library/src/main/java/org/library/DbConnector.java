@@ -45,11 +45,16 @@ public class DbConnector {
         return password.equals(dbPass);
     }
 
-
 //    returns the result if there is a duplicate userName to Main class
     public boolean duplicateUserName(String userName) {
         Database db = new Database();
        return db.getCheckDuplicateUserName(userName);
+    }
+
+//    gets userID
+    public int getUserID(String userName) {
+        Database db = new Database();
+        return db.getUserID(userName);
     }
 
 

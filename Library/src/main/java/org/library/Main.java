@@ -82,16 +82,15 @@ public class Main {
                     book.automaticQuery(preference);
                 } else {
                     System.out.println("This is it.. Work in Progress working");
+                    System.out.println("UserID: " + dbConnector.getUserID(userName));
                     bookManagementMenu();
                 }
-
                 break;
             } else {
                 System.out.println("Incorrect Password");
                 attempts--;
             }
         }
-
     }
 //    Gets selection choice
    private static void bookManagementMenu() {
@@ -182,6 +181,12 @@ public class Main {
         String title = scanner.nextLine();
 
         Book book = new Book();
+
+//        Passing the current userName to the db
+        Database db = new Database();
+
+
+        System.out.println("Please wait. Searching..\n\n");
 //        Searches book by the title
         book.automaticQuery(title);
     }

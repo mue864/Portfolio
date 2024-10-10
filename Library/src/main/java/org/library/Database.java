@@ -2,10 +2,20 @@ package org.library;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+import java.net.ConnectException;
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.Base64;
 
 public class Database {
+
+//    ArrayLists to save book data when retrieved
+    ArrayList<String> bookAuthorList = new ArrayList<>();
+    ArrayList<String> bookTitleList = new ArrayList<>();
+    ArrayList<String> bookISBNlist = new ArrayList<>();
+    ArrayList<String> bookPublisherList = new ArrayList<>();
+    ArrayList<String> bookPageList = new ArrayList<>();
+    ArrayList<String> bookPublishedDate = new ArrayList<>();
 
     private int userID;
     private Connection connect() {
@@ -20,10 +30,11 @@ public class Database {
 
         return con;
     }
-
+// retrieves the current userID and passes it to DB connector
     public int getUserID(String userName) {
         return retrieveCurrentUserID(userName);
     }
+//    the bones for retrieving the userID
     private int retrieveCurrentUserID(String userName) {
         String retrieveQuery = "SELECT userID FROM users WHERE userName = '" + userName + "'";
         try (Connection connection = this.connect();
@@ -45,14 +56,12 @@ public class Database {
     }
 
     public void setBookStorage(String bookName, String bookAuthor, String isbn, String publisher,
-                               String publishedDate, String pageCount) {
-
+                               String publishedDate, String pageCount, int userID) {
         addBookInfo(bookName,bookAuthor,publisher,isbn,publishedDate, pageCount,userID);
     }
 //    the id must be fetched from the current user db. but how?
     private void addBookInfo (String bookTitle, String bookAuthor,
                               String bookPublisher, String isbn, String publishedDate, String pages, int userID) {
-
         String insertInfo = "INSERT INTO books(title, author, publisher, isbn, pages, publishedDate, ID) VALUES(?,?,?,?,?,?,?)";
 
         try (Connection connection = this.connect();
@@ -62,8 +71,8 @@ public class Database {
             preparedStatement.setString(3,bookPublisher);
             preparedStatement.setString(4,isbn);
             preparedStatement.setString(5,pages);
-            preparedStatement.setString(5,publishedDate);
-            preparedStatement.setInt(6,userID);
+            preparedStatement.setString(6,publishedDate);
+            preparedStatement.setInt(7,userID);
             preparedStatement.execute();
         } catch (SQLException e) {
             System.out.println(e.getMessage());
@@ -79,8 +88,8 @@ public class Database {
                 +   "isbn TEXT, \n"
                 +   "pages TEXT, \n"
                 +   "publishedDate TEXT, \n"
-                +   "ID INTEGER NOT NULL, \n"
-                +   "FOREIGN KEY (ID) REFERENCES users (userID)"
+                +   "userID INTEGER NOT NULL, \n"
+                +   "FOREIGN KEY (userID) REFERENCES users (userID)"
                 +   ");";
 
         String userTable = "CREATE TABLE IF NOT EXISTS users (\n"
@@ -97,14 +106,20 @@ public class Database {
                 +   "isCreated INTEGER PRIMARY KEY AUTOINCREMENT"
                 +   ");";
 
+        String sqlCreateCurrentUserTable = "CREATE TABLE IF NOT EXISTS currentUser (\n"
+                +   "userID INTEGER NOT NULL"
+                +   ");";
+
         try (Connection connection = this.connect();
             PreparedStatement createBookTable = connection.prepareStatement(bookTable);
             PreparedStatement createUserTable = connection.prepareStatement(userTable);
-            PreparedStatement createKeyTable = connection.prepareStatement(sqlCreateKeyTable)) {
+            PreparedStatement createKeyTable = connection.prepareStatement(sqlCreateKeyTable);
+            PreparedStatement createCurrentUser = connection.prepareStatement(sqlCreateCurrentUserTable)) {
 
            createBookTable.execute();
            createUserTable.execute();
            createKeyTable.execute();
+           createCurrentUser.execute();
 
 //            System.out.println("Tables created");
         } catch (SQLException e) {
@@ -149,13 +164,11 @@ public class Database {
             insertStatement.setString(1, encodedKey);
             insertStatement.execute();
 
-
         } catch (SQLException e) {
             System.out.println("Here");
-            e.printStackTrace();
+            System.out.println(e.getMessage());
         }
     }
-
     /**
      *
      * @param key the secretkey to be stored
@@ -275,6 +288,111 @@ public class Database {
         addUserInfo(userName, userLastName, password, preference, school);
     }
 
+//  Sets the active user for that particular session, since it's one at a time. It's done through the main class
+    public void setCurrentUSerID(int userID) {
+        currentUserID(userID);
+    }
+//   inserts the id of the active user
+    private void currentUserID(int userID) {
+        String setUserID = "INSERT INTO currentUser(userID) VALUES(?)";
+        try (Connection connection = this.connect();
+             PreparedStatement statement = connection.prepareStatement(setUserID);) {
+            statement.setInt(1,userID);
+            statement.execute();
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
 
+//    This one is supposed to be used when adding books
+    public int getActiveUserID() {
+        return retrieveActiveUserID();
+    }
 
+    private int retrieveActiveUserID() {
+        String retrieveSQL = "SELECT userID FROM currentUser LIMIT 1";
+
+        try (Connection connection = this.connect();
+             PreparedStatement statement = connection.prepareStatement(retrieveSQL);
+             ResultSet rs = statement.executeQuery()) {
+
+            // Check if the ResultSet has at least one row
+            if (rs.next()) {
+                // Now, it is safe to access the column
+                return rs.getInt("userID");
+            } else {
+                System.out.println("No user found.");  // Debug statement for no results
+            }
+        } catch (SQLException e) {
+            System.out.println("Problem: " + e.getMessage());
+        }
+        return 0;  // Return 0 if no userID is found
+    }
+
+    public void setReplaceOldID(int oldID, int newID) {
+        replaceOldID(oldID, newID);
+    }
+
+    private void replaceOldID(int oldID, int newID) {
+        String deleteSQL = "DELETE FROM currentUser WHERE userID = ?";
+        String insertSQL = "INSERT INTO currentUser (userID) VALUES (?)";
+
+        try (Connection connection = this.connect();
+             PreparedStatement deleteStatement = connection.prepareStatement(deleteSQL);
+             PreparedStatement insertStatement = connection.prepareStatement(insertSQL)) {
+
+            // Delete the row with the oldID
+            deleteStatement.setInt(1, oldID);
+            deleteStatement.executeUpdate();
+
+            // Insert the new row with the newID
+            insertStatement.setInt(1, newID);
+            insertStatement.executeUpdate();
+
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    public void getUserBooks(int activeUserID) {
+        userBooks(activeUserID);
+    }
+
+    private void userBooks(int activeUserID) {
+        String sqlRetrieveBooks = "SELECT * FROM books WHERE ID = ?";
+
+        try (Connection connection = this.connect();
+             PreparedStatement preparedStatement = connection.prepareStatement(sqlRetrieveBooks);
+             ResultSet rs = preparedStatement.executeQuery()) {
+
+            while (rs.next()) {
+//                if there are rows
+                if (rs.next()) {
+                    //                extracting the book title
+                    String bookTitle = rs.getString("title");
+                    bookTitleList.add(bookTitle);
+//                extracting book author names
+                    String bookAuthor = rs.getString("author");
+//                Adding the newly extracted book to the ArrayList
+                    bookAuthorList.add(bookAuthor);
+//                extracting the publisher
+                    String publisher = rs.getString("publisher");
+                    bookPublisherList.add(publisher);
+//                extracting the isbn
+                    String isbn = rs.getString("isbn");
+                    bookISBNlist.add(isbn);
+//                extracting the pages
+                    String pages = rs.getString("pages");
+                    bookPageList.add(pages);
+//                extracting the published date
+                    String publishedDate = rs.getString("publishedDate");
+                    bookPublishedDate.add(publishedDate);
+                } else {
+                    System.out.println("No borrowed books available");
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
 }

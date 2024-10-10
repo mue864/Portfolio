@@ -1,6 +1,7 @@
 package org.library;
 
 import javax.xml.crypto.Data;
+import java.time.DayOfWeek;
 
 public class DbConnector {
 
@@ -57,5 +58,29 @@ public class DbConnector {
         return db.getUserID(userName);
     }
 
+//Sets the active user ID
+    public void setCurrentUserID(int userID) {
+        Database db = new Database();
+        db.setCurrentUSerID(userID);
+    }
 
+//    gets the active userID
+    public int getActiveUserID() {
+        Database db = new Database();
+       return db.getActiveUserID();
+    }
+
+    public void replaceOldID(int oldID, int newID) {
+        Database db = new Database();
+        db.setReplaceOldID(oldID, newID);
+    }
+
+    public void getBorrowedBooks(int activeUserID) {
+        Database database = new Database();
+        database.getUserBooks(database.getActiveUserID());
+    }
+
+    public void printBorrowedBooks(Database database) {
+
+    }
 }

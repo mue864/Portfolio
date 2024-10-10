@@ -15,12 +15,12 @@ import java.util.ArrayList;
 
 public class HttpReq {
 
-    private ArrayList<String> bookTitleList = new ArrayList<>();
-    private ArrayList<String> bookAuthorList = new ArrayList<>();
-    private ArrayList<String> publisherList = new ArrayList<>();
-    private ArrayList<String> publishedDate = new ArrayList<>();
-    private ArrayList<String> pageCountList = new ArrayList<>();
-    private ArrayList<String> bookISBNList = new ArrayList<>();
+    private final ArrayList<String> bookTitleList = new ArrayList<>();
+    private final ArrayList<String> bookAuthorList = new ArrayList<>();
+    private final ArrayList<String> publisherList = new ArrayList<>();
+    private final ArrayList<String> publishedDate = new ArrayList<>();
+    private final ArrayList<String> pageCountList = new ArrayList<>();
+    private final ArrayList<String> bookISBNList = new ArrayList<>();
 
 
     public String jsonResponse;
@@ -28,13 +28,11 @@ public class HttpReq {
 
 
     /**
-     *
      * @param authorName the name of the author that needs to be sent as a query
-     * @param bookTitle the name of the book to be searched
-     * @return the search result returned by the search query
+     * @param bookTitle  the name of the book to be searched
      */
 //    fetching data
-    private String sendData(String authorName, String bookTitle) {
+    private void sendData(String authorName, String bookTitle) {
 
 
 //        creating the http client
@@ -64,16 +62,37 @@ public class HttpReq {
 //                Printing the response as a JSON block
 //                System.out.println(jsonResponse);
             } catch (IOException | ParseException exception) {
-                exception.printStackTrace();
+                System.out.println(exception.getMessage());
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
         }
 
-        return jsonResponse;
     }
 
-    private String preferenceData(String bookTitle) {
+    public void getAuthorData(String encodedAuthorName) {
+
+        authorData(encodedAuthorName);
+    }
+
+    private void authorData(String authorName) {
+        try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
+            var request = ClassicRequestBuilder
+                    .get("https://www.googleapis.com/books/v1/volumes?q=inauthor:"+authorName)
+                    .build();
+
+            try (CloseableHttpResponse response = httpClient.execute(request)) {
+                 responseCode = response.getCode();
+                jsonResponse = EntityUtils.toString(response.getEntity());
+            } catch (IOException | ParseException exception) {
+                System.out.println(exception.getMessage());
+            }
+        } catch (IOException exception) {
+            System.out.println(exception.getMessage());
+        }
+    }
+
+    private void preferenceData(String bookTitle) {
         try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
             var request = ClassicRequestBuilder
                     .get("https://www.googleapis.com/books/v1/volumes?q=intitle:"+bookTitle)
@@ -84,17 +103,16 @@ public class HttpReq {
                 jsonResponse = EntityUtils.toString(response.getEntity());
 
             } catch (IOException | ParseException exception) {
-                exception.printStackTrace();
+                System.out.println(exception.getMessage());
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
         }
 
-        return jsonResponse;
     }
 
-    public String getPreferenceData(String bookTitle) {
-        return  preferenceData(bookTitle);
+    public void getPreferenceData(String bookTitle) {
+        preferenceData(bookTitle);
     }
 
 //    Return the stored book info
@@ -238,6 +256,7 @@ public class HttpReq {
 //        }
 
     }
+
 
 
 }

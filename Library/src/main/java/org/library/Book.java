@@ -51,6 +51,28 @@ public class Book {
         autoQuery(bookTitle);
     }
 
+    public void authorQuery(String authorName) {
+        searchAuthor(authorName);
+    }
+
+    private void searchAuthor(String authorName) {
+        HttpReq req = new HttpReq();
+        String encodedAuthorName = encode(authorName);
+        req.getAuthorData(encodedAuthorName);
+
+        int responseCode = req.getResponseCode();
+
+        if (responseCode == 200) {
+            req.setJsonData();
+            loadBookInfo(req);
+
+            printBookInfo();
+        } else {
+            System.out.println("There has been an error: " + responseCode);
+        }
+    }
+
+
     private void autoQuery(String bookTitle) {
         HttpReq req = new HttpReq();
 
@@ -166,8 +188,9 @@ public class Book {
     private void saveBooks(int bookPosition) {
 //        Save the books to the db
         Database db = new Database();
+        System.out.println("User ID: " + db.getActiveUserID());
         db.setBookStorage(bookTitleList.get(bookPosition), bookAuthorList.get(bookPosition), bookISBNList.get(bookPosition),
-                publisherList.get(bookPosition), publishedDate.get(bookPosition), pageCountList.get(bookPosition));
+                publisherList.get(bookPosition), publishedDate.get(bookPosition), pageCountList.get(bookPosition), db.getActiveUserID());
     }
 
     /**
@@ -180,7 +203,7 @@ public class Book {
         String isbn = bookISBNList.get(userChoice);
         String publisher = publisherList.get(userChoice);
         String publishedDateStr = publishedDate.get(userChoice);
-        int pageCount = Integer.parseInt(pageCountList.get(userChoice));
+        String pageCount = pageCountList.get(userChoice);
 
         System.out.println(userChoice+1 + "\n" + "Title: " + title +"\n" + "Author: " + author + "\n" + "ISBN: " + isbn + "\n" +
                 "Publisher: " + publisher + "\n" + "Published Date: " + publishedDateStr + "\n" +

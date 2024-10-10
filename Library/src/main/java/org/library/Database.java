@@ -2,7 +2,6 @@ package org.library;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-import java.net.ConnectException;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -10,12 +9,12 @@ import java.util.Base64;
 public class Database {
 
 //    ArrayLists to save book data when retrieved
-    ArrayList<String> bookAuthorList = new ArrayList<>();
-    ArrayList<String> bookTitleList = new ArrayList<>();
-    ArrayList<String> bookISBNlist = new ArrayList<>();
-    ArrayList<String> bookPublisherList = new ArrayList<>();
-    ArrayList<String> bookPageList = new ArrayList<>();
-    ArrayList<String> bookPublishedDate = new ArrayList<>();
+    private final ArrayList<String> bookAuthorList = new ArrayList<>();
+    private final ArrayList<String> bookTitleList = new ArrayList<>();
+    private final ArrayList<String> bookISBN = new ArrayList<>();
+    private final ArrayList<String> bookPublisherList = new ArrayList<>();
+    private final ArrayList<String> bookPageList = new ArrayList<>();
+    private final ArrayList<String> bookPublishedDate = new ArrayList<>();
 
     private int userID;
     private Connection connect() {
@@ -171,7 +170,7 @@ public class Database {
     }
     /**
      *
-     * @param key the secretkey to be stored
+     * @param key the secretKey to be stored
      */
     public void getKeyStorage(SecretKey key) {
         keyStorage(key);
@@ -358,6 +357,7 @@ public class Database {
         userBooks(activeUserID);
     }
 
+//    retrieves the current user books
     private void userBooks(int activeUserID) {
         String sqlRetrieveBooks = "SELECT * FROM books WHERE ID = ?";
 
@@ -380,7 +380,7 @@ public class Database {
                     bookPublisherList.add(publisher);
 //                extracting the isbn
                     String isbn = rs.getString("isbn");
-                    bookISBNlist.add(isbn);
+                    bookISBN.add(isbn);
 //                extracting the pages
                     String pages = rs.getString("pages");
                     bookPageList.add(pages);
@@ -394,5 +394,30 @@ public class Database {
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
+    }
+
+//   getter methods for getting the retrieved book information
+    public ArrayList<String> getBookAuthorList() {
+        return bookAuthorList;
+    }
+
+    public ArrayList<String> getBookTitleList() {
+        return  bookTitleList;
+    }
+
+    public ArrayList<String> getBookISBN() {
+        return bookISBN;
+    }
+
+    public ArrayList<String> getBookPageList() {
+        return bookPageList;
+    }
+
+    public ArrayList<String> getBookPublishedDate() {
+        return bookPublishedDate;
+    }
+
+    public ArrayList<String> getBookPublisherList() {
+        return bookPublisherList;
     }
 }

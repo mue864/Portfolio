@@ -1,11 +1,20 @@
 package org.library;
 
-import javax.xml.crypto.Data;
-import java.time.DayOfWeek;
+
+import java.util.ArrayList;
 
 public class DbConnector {
 
-//    Adds userdata
+    //    ArrayLists to save book data when retrieved
+    ArrayList<String> bookAuthorList = new ArrayList<>();
+    ArrayList<String> bookTitleList = new ArrayList<>();
+    ArrayList<String> bookISBNlist = new ArrayList<>();
+    ArrayList<String> bookPublisherList = new ArrayList<>();
+    ArrayList<String> bookPageList = new ArrayList<>();
+    ArrayList<String> bookPublishedDate = new ArrayList<>();
+
+
+    //    Adds userdata
     private void addUserData(String userName, String userLastName, String password,
                          String preference, String school) throws Exception {
         Encryption encryption = new Encryption();
@@ -77,10 +86,42 @@ public class DbConnector {
 
     public void getBorrowedBooks(int activeUserID) {
         Database database = new Database();
+//        retrieving the current user books
         database.getUserBooks(database.getActiveUserID());
+        printBorrowedBooks(database);
     }
 
     public void printBorrowedBooks(Database database) {
+        System.out.println("In here");
+//        populating the lists from the database instance
+        bookAuthorList = database.getBookAuthorList();
+        bookTitleList = database.getBookTitleList();
+        bookISBNlist = database.getBookISBN();
+        bookPublisherList = database.getBookPublisherList();
+        bookPageList = database.getBookPublisherList();
+        bookPublishedDate = database.getBookPublishedDate();
 
+        int listSize = Math.min(bookAuthorList.size(),
+                                Math.min(bookTitleList.size(),
+                                        Math.min(bookISBNlist.size(),
+                                                Math.min(bookPublishedDate.size(),
+                                                        Math.min(bookPublisherList.size(),
+                                                                bookPageList.size()
+                                )
+                                        )
+                                                )
+                                                        )
+        );
+
+//        printing the books
+        for (int i = 0; i < listSize; i++) {
+            System.out.println(i+1+".\n"
+                              + "Title: " + bookAuthorList.get(i)
+                              + "Author: " + bookAuthorList.get(i)
+                              + "Pages: " + bookPageList.get(i)
+                              + "ISBN: " + bookISBNlist.get(i)
+                              + "Published Date: " + bookPublishedDate.get(i)
+                              + "Publisher: " + bookPublisherList.get(i));
+        }
     }
 }

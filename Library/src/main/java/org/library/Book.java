@@ -116,7 +116,6 @@ public class Book {
 
 //    Load the book information to the lists from HttpReq
     private void loadBookInfo(HttpReq req) {
-        HttpReq loadReq = new HttpReq();
 //        Copying all elements into the new arrayLists in this class
         bookTitleList = req.getBookTitleList();
         bookAuthorList = req.getBookAuthorList();
